@@ -31,9 +31,26 @@ namespace flight_test_weather_conditions_app
             {
                 string[] userArgs = GetUserDataInput();
 
-                while (!File.Exists(userArgs[0]))
+                while (true)
                 {
-                    Console.WriteLine(!File.Exists(userArgs[0]) ? _translations["fileDoesntExists"] : "");
+                    string filePath = userArgs[0];
+
+                    bool doesFileExist = File.Exists(filePath);
+                    bool hasCorrectExtension = Path.GetExtension(filePath) is ".csv";
+
+                    if (!doesFileExist)
+                    {
+                        Console.WriteLine(_translations["fileDoesntExists"]);
+                    }
+                    else if (!hasCorrectExtension)
+                    {
+                        Console.WriteLine(_translations["fileWrongFormat"]);
+                    }
+                    else
+                    {
+                        break;
+                    }
+
                     userArgs = GetUserDataInput();
                 }
 
@@ -60,19 +77,20 @@ namespace flight_test_weather_conditions_app
                     if (bestFlightDay is null)
                     {
                         Console.WriteLine(_translations["notSuitableDayFound"]);
-                        break;
                     }
+                    else
+                    {
+                        string reportFileName = "WeatherReport.csv";
+                        this._weatherReportService.GenerateWeatherReport(weatherData, reportFileName, bestFlightDay);
 
-                    string reportFileName = "WeatherReport.csv";
-                    this._weatherReportService.GenerateWeatherReport(weatherData, reportFileName, bestFlightDay);
+                        string subject = _translations["mailSubject"];
+                        string body = _translations["mailBody"];
 
-                    string subject = _translations["mailSubject"];
-                    string body = _translations["mailBody"];
+                        this._emailService.SendEmailWithAttachment(senderEmail, password, receiverEmail, subject, body, reportFileName);
 
-                    this._emailService.SendEmailWithAttachment(senderEmail, password, receiverEmail, subject, body, reportFileName);
-
-                    Console.WriteLine(_translations["mailSuccess"]);
-                    Console.WriteLine(_translations["taskCompleted"]);
+                        Console.WriteLine(_translations["mailSuccess"]);
+                        Console.WriteLine(_translations["taskCompleted"]);
+                    }
                 }
                 catch (Exception ex)
                 {
